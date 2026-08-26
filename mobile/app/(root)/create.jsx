@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Switch,
 } from "react-native";
 
 import { useAuth, useUser } from "@clerk/clerk-expo";
@@ -140,6 +141,11 @@ const CreateScreen = () => {
     amount,
     setAmount,
   ] = useState("");
+
+  const [
+    isPaid,
+    setIsPaid,
+  ] = useState(true);
 
   const [
     selectedCategory,
@@ -297,6 +303,7 @@ const CreateScreen = () => {
           amount: formattedAmount,
           category: selectedCategory,
           person: person.trim() || null,
+          is_paid: isPaid,
         };
 
         await createTransaction(txPayload);
@@ -818,6 +825,31 @@ const CreateScreen = () => {
               }
               autoCapitalize="words"
               returnKeyType="done"
+            />
+          </View>
+
+          {/* ==================================================
+              PAID STATUS
+          ================================================== */}
+
+          <View style={[styles.inputContainer, { justifyContent: 'space-between', borderBottomWidth: 0, paddingRight: 10 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={21}
+                color={theme.textLight}
+                style={styles.inputIcon}
+              />
+              <Text style={[styles.input, { color: theme.text }]}>
+                {isPaid ? "Paid / Settled" : "Unpaid / Pending"}
+              </Text>
+            </View>
+            <Switch
+              value={isPaid}
+              onValueChange={setIsPaid}
+              disabled={isLoading}
+              trackColor={{ false: theme.border, true: theme.primary }}
+              thumbColor={Platform.OS === 'ios' ? '#fff' : (isPaid ? theme.primary : '#f4f3f4')}
             />
           </View>
 

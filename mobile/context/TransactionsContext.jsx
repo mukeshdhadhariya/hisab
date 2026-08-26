@@ -131,6 +131,23 @@ export const TransactionsProvider = ({ children }) => {
             if (response.ok || response.status === 404) {
               newQueue = newQueue.filter(q => q.id !== item.id);
             }
+          } else if (item.action === "UPDATE_STATUS") {
+            if (item.tempId && String(item.tempId).startsWith('temp_')) {
+               // Temporary transactions will get created with the updated status anyway
+               newQueue = newQueue.filter(q => q.id !== item.id);
+               continue;
+            }
+            
+            const url = `${API_URL}/transactions/${encodeURIComponent(item.payload.id)}/status`;
+            const response = await fetch(url, { 
+              method: "PATCH", 
+              headers, 
+              body: JSON.stringify({ is_paid: item.payload.is_paid }) 
+            });
+            
+            if (response.ok || response.status === 404) {
+              newQueue = newQueue.filter(q => q.id !== item.id);
+            }
           }
         } catch (err) {
           console.log("[Sync Error] Will retry later:", err);
@@ -281,6 +298,42 @@ export const TransactionsProvider = ({ children }) => {
     return true;
   }, [userId, transactions, processSyncQueue]);
 
+  // Optimistic Toggle Paid
+  const toggleTransactionPaidStatus = useCallback(async (id) => {
+    if (!id || !userId) return false;
+
+    // Update state instantly
+    setTransactions(prev => {
+      const updated = prev.map(t => {
+        if (String(t.id) === String(id) || String(t._id) === String(id)) {
+          return { ...t, is_paid: !t.is_paid };
+        }
+        return t;
+      });
+      safeAsyncStorage.setItem(getTxKey(userId), JSON.stringify(updated));
+      return updated;
+    });
+
+    // Add to sync queue
+    const tx = transactions.find(t => String(t.id) === String(id) || String(t._id) === String(id));
+    if (!tx) return;
+
+    const queueStr = await safeAsyncStorage.getItem(getQueueKey(userId));
+    const queue = queueStr ? JSON.parse(queueStr) : [];
+    queue.push({ 
+      id: Date.now().toString(), 
+      action: "UPDATE_STATUS", 
+      payload: { id, is_paid: !tx.is_paid }, 
+      tempId: id 
+    });
+    await safeAsyncStorage.setItem(getQueueKey(userId), JSON.stringify(queue));
+
+    // Try syncing silently in background
+    processSyncQueue();
+    
+    return true;
+  }, [userId, transactions, processSyncQueue]);
+
   const refresh = useCallback(() => loadData(true), [loadData]);
 
   return (
@@ -291,9 +344,11 @@ export const TransactionsProvider = ({ children }) => {
       isSyncing,
       error,
       loadData,
+      hasLoaded,
       refresh,
       createTransaction,
-      deleteTransaction
+      deleteTransaction,
+      toggleTransactionPaidStatus,
     }}>
       {children}
     </TransactionsContext.Provider>

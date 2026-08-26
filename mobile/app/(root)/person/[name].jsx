@@ -26,7 +26,7 @@ export default function PersonTransactionsScreen() {
   
   const styles = useMemo(() => createHomeStyles(theme), [theme]);
 
-  const { transactions, isLoading, deleteTransaction, loadData } = useTransactions(user?.id);
+  const { transactions, isLoading, deleteTransaction, toggleTransactionPaidStatus, loadData } = useTransactions(user?.id);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -158,7 +158,7 @@ export default function PersonTransactionsScreen() {
         data={personTransactions}
         keyExtractor={(item, index) => item?._id || item?.id?.toString() || `person-tx-${index}`}
         renderItem={({ item }) => (
-          <TransactionItem item={item} onDelete={handleDelete} />
+          <TransactionItem item={item} onDelete={handleDelete} onTogglePaid={toggleTransactionPaidStatus} />
         )}
         ListHeaderComponent={
           <View>

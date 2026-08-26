@@ -17,15 +17,17 @@ export async function getTransactionsByUserId(req, res) {
 
 export async function createTransaction(req, res) {
   try {
-    const { title, amount, category, user_id, person } = req.body;
+    const { title, amount, category, user_id, person, is_paid } = req.body;
 
     if (!title || !user_id || !category || amount === undefined) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    const paid_status = is_paid !== undefined ? is_paid : true;
+
     const transaction = await sql`
-      INSERT INTO transactions(user_id,title,amount,category,person)
-      VALUES (${user_id},${title},${amount},${category},${person || null})
+      INSERT INTO transactions(user_id,title,amount,category,person,is_paid)
+      VALUES (${user_id},${title},${amount},${category},${person || null},${paid_status})
       RETURNING *
     `;
     
@@ -55,6 +57,33 @@ export async function deleteTransaction(req, res) {
     res.status(200).json({ message: "Transaction deleted successfully" });
   } catch (error) {
     console.log("Error deleting the transaction", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function updateTransactionStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const { is_paid } = req.body;
+
+    if (isNaN(parseInt(id))) {
+      return res.status(400).json({ message: "Invalid transaction ID" });
+    }
+
+    const result = await sql`
+      UPDATE transactions 
+      SET is_paid = ${is_paid} 
+      WHERE id = ${id} 
+      RETURNING *
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    res.status(200).json(result[0]);
+  } catch (error) {
+    console.log("Error updating the transaction", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

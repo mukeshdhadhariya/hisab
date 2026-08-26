@@ -17,7 +17,7 @@ const CATEGORY_ICONS = {
   Rent: "home-outline",
 };
 
-export const TransactionItem = React.memo(({ item, onDelete }) => {
+export const TransactionItem = React.memo(({ item, onDelete, onTogglePaid }) => {
   const { theme } = useTheme();
 
   // Memoize styles to prevent unnecessary object recalculations on scroll
@@ -75,6 +75,11 @@ export const TransactionItem = React.memo(({ item, onDelete }) => {
               • {person}
             </Text>
           )}
+          {item?.is_paid === false && (
+            <Text style={[styles.transactionCategory, { marginLeft: 6, color: theme.expense, fontWeight: 'bold' }]} numberOfLines={1}>
+              • Unpaid
+            </Text>
+          )}
         </View>
       </View>
 
@@ -94,16 +99,31 @@ export const TransactionItem = React.memo(({ item, onDelete }) => {
       </View>
 
       {/* DELETE BUTTON */}
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => onDelete?.(transactionId)}
-        activeOpacity={0.6}
-        accessibilityRole="button"
-        accessibilityLabel={`Delete ${title}`}
-        hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
-      >
-        <Ionicons name="trash-outline" size={16} color={theme.textMuted || theme.textLight} />
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {item?.is_paid === false && (
+          <TouchableOpacity
+            style={[styles.deleteButton, { marginRight: 8, backgroundColor: theme.incomeLight || "rgba(34, 197, 94, 0.12)" }]}
+            onPress={() => onTogglePaid?.(transactionId)}
+            activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel={`Mark ${title} as paid`}
+            hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+          >
+            <Ionicons name="checkmark-outline" size={16} color={theme.income || "#22C55E"} />
+          </TouchableOpacity>
+        )}
+        
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => onDelete?.(transactionId)}
+          activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete ${title}`}
+          hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+        >
+          <Ionicons name="trash-outline" size={16} color={theme.textMuted || theme.textLight} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 });

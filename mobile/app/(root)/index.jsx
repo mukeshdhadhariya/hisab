@@ -77,6 +77,7 @@ export default function Page() {
     loadData,
     refresh,
     deleteTransaction,
+    toggleTransactionPaidStatus,
   } = useTransactions(userId);
 
   // ==========================================================
@@ -571,6 +572,7 @@ export default function Page() {
           <TransactionItem
             item={item}
             onDelete={handleDelete}
+            onTogglePaid={toggleTransactionPaidStatus}
           />
         )}
         ListHeaderComponent={
