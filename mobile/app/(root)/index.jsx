@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { PieChart } from "react-native-chart-kit";
 
 import { useTransactions } from "../../hooks/useTransactions";
+import { getHasConfirmedDelete, setHasConfirmedDelete } from "../../context/TransactionsContext";
 import { BalanceCard } from "../../components/BalanceCard";
 import { TransactionItem } from "../../components/TransactionItem";
 import NoTransactionsFound from "../../components/NoTransactionsFound";
@@ -79,11 +80,6 @@ export default function Page() {
   } = useTransactions(userId);
 
   // ==========================================================
-  // INITIAL LOAD GUARD
-  // ==========================================================
-  //
-  // IMPORTANT:
-  // This prevents:
   // LOAD DATA ONCE
   // ==========================================================
 
@@ -209,22 +205,25 @@ export default function Page() {
       if (!id) {
         return;
       }
+      
+      if (getHasConfirmedDelete()) {
+        deleteTransaction(id);
+        return;
+      }
 
       Alert.alert(
         "Delete transaction",
-        "This transaction will be permanently removed.",
+        "Are you sure you want to delete this transaction?",
         [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              await deleteTransaction(id);
-            },
-          },
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Delete", 
+            style: "destructive", 
+            onPress: () => {
+               setHasConfirmedDelete(true);
+               deleteTransaction(id);
+            }
+          }
         ]
       );
     },

@@ -1,7 +1,27 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { API_URL } from "../constants/api";
-import { Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// In-memory fallback if AsyncStorage native module is missing (Expo Go restart required)
+const memoryCache = new Map();
+
+const safeAsyncStorage = {
+  getItem: async (key) => {
+    try {
+      return await AsyncStorage.getItem(key);
+    } catch (e) {
+      return memoryCache.get(key) || null;
+    }
+  },
+  setItem: async (key, value) => {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (e) {
+      memoryCache.set(key, value);
+    }
+  }
+};
 
 const TransactionsContext = createContext(null);
 
@@ -11,6 +31,15 @@ const INITIAL_SUMMARY = {
   expenses: 0,
 };
 
+// Storage Keys
+const getTxKey = (uid) => `@transactions_${uid}`;
+const getSummaryKey = (uid) => `@summary_${uid}`;
+const getQueueKey = (uid) => `@sync_queue_${uid}`;
+
+let hasConfirmedDelete = false;
+export const getHasConfirmedDelete = () => hasConfirmedDelete;
+export const setHasConfirmedDelete = (val) => { hasConfirmedDelete = val; };
+
 export const TransactionsProvider = ({ children }) => {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -19,96 +48,239 @@ export const TransactionsProvider = ({ children }) => {
 
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState(INITIAL_SUMMARY);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // True initially for offline load
   const [error, setError] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const [hasLoaded, setHasLoaded] = useState(false);
-  const requestRef = useRef(null);
   const getTokenRef = useRef(getToken);
+  
+  // Keep track of sync state to avoid parallel syncs
+  const isSyncingRef = useRef(false);
 
   useEffect(() => {
     getTokenRef.current = getToken;
   }, [getToken]);
 
+  // Load from AsyncStorage instantly on boot
+  useEffect(() => {
+    if (userId) {
+      const loadLocalData = async () => {
+        try {
+          const localTx = await safeAsyncStorage.getItem(getTxKey(userId));
+          const localSummary = await safeAsyncStorage.getItem(getSummaryKey(userId));
+          
+          if (localTx) setTransactions(JSON.parse(localTx));
+          if (localSummary) setSummary(JSON.parse(localSummary));
+        } catch (e) {
+          console.error("Failed to load local data:", e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadLocalData();
+    }
+  }, [userId]);
+
+  // Sync Queue Processor
+  const processSyncQueue = useCallback(async () => {
+    if (!userId || isSyncingRef.current) return;
+    
+    try {
+      isSyncingRef.current = true;
+      setIsSyncing(true);
+      
+      const token = await getTokenRef.current();
+      if (!token) return;
+
+      const queueStr = await safeAsyncStorage.getItem(getQueueKey(userId));
+      let queue = queueStr ? JSON.parse(queueStr) : [];
+      
+      if (queue.length === 0) return;
+
+      const headers = { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+      let newQueue = [...queue];
+
+      for (let i = 0; i < queue.length; i++) {
+        const item = queue[i];
+        try {
+          if (item.action === "CREATE") {
+            const url = `${API_URL}/transactions`;
+            const response = await fetch(url, { method: "POST", headers, body: JSON.stringify(item.payload) });
+            
+            if (response.ok) {
+              const createdTx = await response.json();
+              // Replace temp ID with real ID in state
+              setTransactions(prev => {
+                const updated = prev.map(t => t.id === item.tempId ? createdTx : t);
+                safeAsyncStorage.setItem(getTxKey(userId), JSON.stringify(updated));
+                return updated;
+              });
+              newQueue = newQueue.filter(q => q.tempId !== item.tempId);
+            }
+          } else if (item.action === "DELETE") {
+            // If it was a temporary transaction, we can just remove it from queue
+            if (item.tempId && String(item.payload).startsWith('temp_')) {
+               newQueue = newQueue.filter(q => q.id !== item.id);
+               continue;
+            }
+            
+            const url = `${API_URL}/transactions/${encodeURIComponent(item.payload)}`;
+            const response = await fetch(url, { method: "DELETE", headers });
+            
+            if (response.ok || response.status === 404) {
+              newQueue = newQueue.filter(q => q.id !== item.id);
+            }
+          }
+        } catch (err) {
+          console.log("[Sync Error] Will retry later:", err);
+          break; // Stop syncing on network error, try again later
+        }
+      }
+      
+      await safeAsyncStorage.setItem(getQueueKey(userId), JSON.stringify(newQueue));
+    } catch (e) {
+      console.error("[Sync Queue] Error processing queue:", e);
+    } finally {
+      isSyncingRef.current = false;
+      setIsSyncing(false);
+    }
+  }, [userId]);
+
   const loadData = useCallback(async (force = false) => {
     if (!userId) return false;
-    if (!force && hasLoaded) return true; // Caching logic
-    if (requestRef.current) return requestRef.current;
+    
+    // Fire offline sync queue whenever we try to load data
+    processSyncQueue();
 
-    const request = (async () => {
-      if (force || !hasLoaded) setIsLoading(true);
-      setError(null);
+    if (!force && hasLoaded) return true;
 
-      try {
-        const token = await getTokenRef.current();
-        if (!token) throw new Error("Authentication token is not available.");
-
-        const headers = { Accept: "application/json", Authorization: `Bearer ${token}` };
-        const transactionsUrl = `${API_URL}/transactions/${encodeURIComponent(userId)}`;
-        const summaryUrl = `${API_URL}/transactions/summary/${encodeURIComponent(userId)}`;
-
-        const [transactionsResponse, summaryResponse] = await Promise.all([
-          fetch(transactionsUrl, { method: "GET", headers }),
-          fetch(summaryUrl, { method: "GET", headers }),
-        ]);
-
-        const transactionsText = await transactionsResponse.text();
-        let transactionsData = transactionsText ? JSON.parse(transactionsText) : [];
-        if (!transactionsResponse.ok) throw new Error(transactionsData?.message || `Transactions request failed (${transactionsResponse.status})`);
-
-        const summaryText = await summaryResponse.text();
-        let summaryData = summaryText ? JSON.parse(summaryText) : {};
-        if (!summaryResponse.ok) throw new Error(summaryData?.message || `Summary request failed (${summaryResponse.status})`);
-
-        const normalizedTransactions = Array.isArray(transactionsData) ? transactionsData : (Array.isArray(transactionsData?.transactions) ? transactionsData.transactions : []);
-        const normalizedSummary = {
-          balance: Number(summaryData?.balance) || 0,
-          income: Number(summaryData?.income) || 0,
-          expenses: Number(summaryData?.expenses) || 0,
-        };
-
-        setTransactions(normalizedTransactions);
-        setSummary(normalizedSummary);
-        setError(null);
-        setHasLoaded(true);
-        return true;
-      } catch (err) {
-        setError(err?.message || "Unable to load transactions.");
-        return false;
-      } finally {
-        setIsLoading(false);
-        requestRef.current = null;
-      }
-    })();
-
-    requestRef.current = request;
-    return request;
-  }, [userId, hasLoaded]);
-
-  const deleteTransaction = useCallback(async (id) => {
-    if (!id) return false;
     try {
       const token = await getTokenRef.current();
       if (!token) throw new Error("Authentication token is not available.");
+
+      const headers = { Accept: "application/json", Authorization: `Bearer ${token}` };
+      const transactionsUrl = `${API_URL}/transactions/${encodeURIComponent(userId)}`;
+      const summaryUrl = `${API_URL}/transactions/summary/${encodeURIComponent(userId)}`;
+
+      const [transactionsResponse, summaryResponse] = await Promise.all([
+        fetch(transactionsUrl, { method: "GET", headers }),
+        fetch(summaryUrl, { method: "GET", headers }),
+      ]);
+
+      const transactionsText = await transactionsResponse.text();
+      let transactionsData = transactionsText ? JSON.parse(transactionsText) : [];
+      if (!transactionsResponse.ok) throw new Error(transactionsData?.message || `Transactions request failed`);
+
+      const summaryText = await summaryResponse.text();
+      let summaryData = summaryText ? JSON.parse(summaryText) : {};
+      if (!summaryResponse.ok) throw new Error(summaryData?.message || `Summary request failed`);
+
+      const normalizedTransactions = Array.isArray(transactionsData) ? transactionsData : (Array.isArray(transactionsData?.transactions) ? transactionsData.transactions : []);
+      const normalizedSummary = {
+        balance: Number(summaryData?.balance) || 0,
+        income: Number(summaryData?.income) || 0,
+        expenses: Number(summaryData?.expenses) || 0,
+      };
+
+      setTransactions(normalizedTransactions);
+      setSummary(normalizedSummary);
+      setError(null);
+      setHasLoaded(true);
       
-      const url = `${API_URL}/transactions/${encodeURIComponent(id)}`;
-      const response = await fetch(url, { method: "DELETE", headers: { Accept: "application/json", Authorization: `Bearer ${token}` } });
-      const text = await response.text();
-      let data = {};
-      try { data = text ? JSON.parse(text) : {}; } catch {}
-
-      if (!response.ok) throw new Error(data?.message || `Delete failed (${response.status})`);
-
-      await loadData(true); // Force refresh
-      Alert.alert("Success", "Transaction deleted successfully.");
+      // Update cache
+      safeAsyncStorage.setItem(getTxKey(userId), JSON.stringify(normalizedTransactions));
+      safeAsyncStorage.setItem(getSummaryKey(userId), JSON.stringify(normalizedSummary));
+      
       return true;
     } catch (err) {
-      Alert.alert("Error", err?.message || "Failed to delete transaction.");
+      setError(err?.message || "Unable to load transactions.");
+      // We don't block the UI, they just see offline data
       return false;
     }
-  }, [loadData]);
+  }, [userId, hasLoaded, processSyncQueue]);
 
-  // Expose force refresh for pull-to-refresh
+  // Optimistic Create
+  const createTransaction = useCallback(async (txPayload) => {
+    if (!userId) return false;
+    
+    const tempId = `temp_${Date.now()}`;
+    const optimisticTx = {
+      ...txPayload,
+      id: tempId,
+      _id: tempId, // Some components might use _id
+      created_at: new Date().toISOString(),
+    };
+
+    // Update state instantly
+    setTransactions(prev => {
+      const updated = [optimisticTx, ...prev];
+      safeAsyncStorage.setItem(getTxKey(userId), JSON.stringify(updated));
+      return updated;
+    });
+    
+    setSummary(prev => {
+      const amount = Number(txPayload.amount);
+      const updated = {
+        balance: prev.balance + amount,
+        income: amount > 0 ? prev.income + amount : prev.income,
+        expenses: amount < 0 ? prev.expenses + Math.abs(amount) : prev.expenses,
+      };
+      safeAsyncStorage.setItem(getSummaryKey(userId), JSON.stringify(updated));
+      return updated;
+    });
+
+    // Add to sync queue
+    const queueStr = await safeAsyncStorage.getItem(getQueueKey(userId));
+    const queue = queueStr ? JSON.parse(queueStr) : [];
+    queue.push({ id: Date.now().toString(), action: "CREATE", payload: txPayload, tempId });
+    await safeAsyncStorage.setItem(getQueueKey(userId), JSON.stringify(queue));
+
+    // Try syncing silently in background
+    processSyncQueue();
+    
+    return true;
+  }, [userId, processSyncQueue]);
+
+  // Optimistic Delete
+  const deleteTransaction = useCallback(async (id) => {
+    if (!id || !userId) return false;
+
+    // Find the tx to delete so we can revert summary
+    const txToDelete = transactions.find(t => String(t.id) === String(id) || String(t._id) === String(id));
+    
+    // Update state instantly
+    setTransactions(prev => {
+      const updated = prev.filter(t => String(t.id) !== String(id) && String(t._id) !== String(id));
+      safeAsyncStorage.setItem(getTxKey(userId), JSON.stringify(updated));
+      return updated;
+    });
+    
+    if (txToDelete) {
+      setSummary(prev => {
+        const amount = Number(txToDelete.amount);
+        const updated = {
+          balance: prev.balance - amount,
+          income: amount > 0 ? prev.income - amount : prev.income,
+          expenses: amount < 0 ? prev.expenses - Math.abs(amount) : prev.expenses,
+        };
+        safeAsyncStorage.setItem(getSummaryKey(userId), JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    // Add to sync queue
+    const queueStr = await safeAsyncStorage.getItem(getQueueKey(userId));
+    const queue = queueStr ? JSON.parse(queueStr) : [];
+    queue.push({ id: Date.now().toString(), action: "DELETE", payload: id, tempId: id });
+    await safeAsyncStorage.setItem(getQueueKey(userId), JSON.stringify(queue));
+
+    // Try syncing silently in background
+    processSyncQueue();
+    
+    return true;
+  }, [userId, transactions, processSyncQueue]);
+
   const refresh = useCallback(() => loadData(true), [loadData]);
 
   return (
@@ -116,9 +288,11 @@ export const TransactionsProvider = ({ children }) => {
       transactions,
       summary,
       isLoading,
+      isSyncing,
       error,
       loadData,
       refresh,
+      createTransaction,
       deleteTransaction
     }}>
       {children}

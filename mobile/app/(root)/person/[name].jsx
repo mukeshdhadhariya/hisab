@@ -1,16 +1,18 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useTransactions } from "../../../hooks/useTransactions";
+import { getHasConfirmedDelete, setHasConfirmedDelete } from "../../../context/TransactionsContext";
 import { useUser } from "@clerk/clerk-expo";
 import { TransactionItem } from "../../../components/TransactionItem";
 import { useTheme } from "../../../context/ThemeContext";
@@ -41,8 +43,8 @@ export default function PersonTransactionsScreen() {
   }, [safeTransactions, name]);
 
   const stats = useMemo(() => {
-    let totalGiven = 0; // amount < 0 (expense)
-    let totalReceived = 0; // amount > 0 (income)
+    let totalGiven = 0;
+    let totalReceived = 0;
 
     personTransactions.forEach((t) => {
       const amt = Number(t.amount) || 0;
@@ -52,6 +54,34 @@ export default function PersonTransactionsScreen() {
 
     return { totalGiven, totalReceived, net: totalReceived - totalGiven };
   }, [personTransactions]);
+
+  const handleDelete = useCallback(
+    (id) => {
+      if (!id) return;
+      
+      if (getHasConfirmedDelete()) {
+        deleteTransaction(id);
+        return;
+      }
+
+      Alert.alert(
+        "Delete transaction",
+        "Are you sure you want to delete this transaction?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Delete", 
+            style: "destructive", 
+            onPress: () => {
+               setHasConfirmedDelete(true);
+               deleteTransaction(id);
+            }
+          }
+        ]
+      );
+    },
+    [deleteTransaction]
+  );
 
   const localStyles = StyleSheet.create({
     header: {
@@ -128,7 +158,7 @@ export default function PersonTransactionsScreen() {
         data={personTransactions}
         keyExtractor={(item, index) => item?._id || item?.id?.toString() || `person-tx-${index}`}
         renderItem={({ item }) => (
-          <TransactionItem item={item} onDelete={deleteTransaction} />
+          <TransactionItem item={item} onDelete={handleDelete} />
         )}
         ListHeaderComponent={
           <View>

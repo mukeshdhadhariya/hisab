@@ -92,6 +92,8 @@ const parseApiResponse = async (response) => {
 };
 
 
+import { useTransactions } from "../../hooks/useTransactions";
+
 // ============================================================
 // SCREEN
 // ============================================================
@@ -111,6 +113,8 @@ const CreateScreen = () => {
   const {
     theme,
   } = useTheme();
+
+  const { createTransaction } = useTransactions(user?.id);
 
   const styles = useMemo(
     () => createCreateStyles(theme),
@@ -275,20 +279,6 @@ const CreateScreen = () => {
       try {
 
         // ============================================
-        // CLERK TOKEN
-        // ============================================
-
-        const token =
-          await getToken();
-
-        if (!token) {
-          throw new Error(
-            "Authentication token is not available."
-          );
-        }
-
-
-        // ============================================
         // AMOUNT
         // ============================================
 
@@ -297,110 +287,22 @@ const CreateScreen = () => {
             ? -Math.abs(parsedAmount)
             : Math.abs(parsedAmount);
 
-
         // ============================================
-        // URL
-        // ============================================
-
-        const url =
-          `${API_URL}/transactions`;
-
-        console.log(
-          "[CreateTransaction] POST:",
-          url
-        );
-
-
-        // ============================================
-        // REQUEST
+        // CREATE LOCALLY & SYNC
         // ============================================
 
-        const response =
-          await fetch(
-            url,
-            {
-              method: "POST",
+        const txPayload = {
+          user_id: user.id,
+          title: cleanTitle,
+          amount: formattedAmount,
+          category: selectedCategory,
+          person: person.trim() || null,
+        };
 
-              headers: {
-                Accept:
-                  "application/json",
+        await createTransaction(txPayload);
 
-                "Content-Type":
-                  "application/json",
-
-                Authorization:
-                  `Bearer ${token}`,
-              },
-
-              body: JSON.stringify({
-                user_id: user.id,
-
-                title:
-                  cleanTitle,
-
-                amount:
-                  formattedAmount,
-
-                category:
-                  selectedCategory,
-                  
-                person: person.trim() || null,
-              }),
-            }
-          );
-
-
-        // ============================================
-        // RESPONSE
-        // ============================================
-
-        const data =
-          await parseApiResponse(
-            response
-          );
-
-
-        console.log(
-          "[CreateTransaction] Status:",
-          response.status
-        );
-
-
-        // ============================================
-        // API ERROR
-        // ============================================
-
-        if (!response.ok) {
-          throw new Error(
-            data?.message ||
-              data?.error ||
-              data?.raw ||
-              `Failed to create transaction (${response.status})`
-          );
-        }
-
-
-        // ============================================
-        // SUCCESS
-        // ============================================
-
-        console.log(
-          "[CreateTransaction] Created successfully"
-        );
-
-
-        Alert.alert(
-          "Success",
-          "Transaction created successfully.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                router.back();
-              },
-            },
-          ]
-        );
+        // Instantly route back (no popup needed!)
+        router.back();
 
       } catch (error) {
 
@@ -409,13 +311,10 @@ const CreateScreen = () => {
           error
         );
 
-
         let message =
           error?.message ||
           "Something went wrong.";
 
-
-        // Network request failed
         if (
           error?.message ===
           "Network request failed"
@@ -423,7 +322,6 @@ const CreateScreen = () => {
           message =
             "Unable to connect to the server. Please check your internet connection and try again.";
         }
-
 
         Alert.alert(
           "Unable to create transaction",
@@ -446,7 +344,7 @@ const CreateScreen = () => {
       selectedCategory,
       isExpense,
       person,
-      getToken,
+      createTransaction,
       router,
     ]);
 
