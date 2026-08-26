@@ -29,6 +29,7 @@ export const TransactionItem = React.memo(({ item, onDelete }) => {
   const transactionId = item?._id || item?.id;
   const category = item?.category || "Other";
   const title = item?.title || "Untitled transaction";
+  const person = item?.person;
   const iconName = CATEGORY_ICONS[category] || "pricetag-outline";
 
   const amountColor = isIncome ? theme.income : theme.expense;
@@ -69,7 +70,11 @@ export const TransactionItem = React.memo(({ item, onDelete }) => {
           <Text style={styles.transactionCategory} numberOfLines={1}>
             {category}
           </Text>
-
+          {person && (
+            <Text style={[styles.transactionCategory, { marginLeft: 6, color: theme.text }]} numberOfLines={1}>
+              • {person}
+            </Text>
+          )}
         </View>
       </View>
 

@@ -128,6 +128,11 @@ const CreateScreen = () => {
   ] = useState("");
 
   const [
+    person,
+    setPerson,
+  ] = useState("");
+
+  const [
     amount,
     setAmount,
   ] = useState("");
@@ -160,7 +165,7 @@ const CreateScreen = () => {
   //
   // The ref prevents that completely.
   //
-
+  
   const submittingRef =
     useRef(false);
 
@@ -338,6 +343,8 @@ const CreateScreen = () => {
 
                 category:
                   selectedCategory,
+                  
+                person: person.trim() || null,
               }),
             }
           );
@@ -438,6 +445,7 @@ const CreateScreen = () => {
       amount,
       selectedCategory,
       isExpense,
+      person,
       getToken,
       router,
     ]);
@@ -866,6 +874,51 @@ const CreateScreen = () => {
                 100
               }
               autoCapitalize="sentences"
+              returnKeyType="done"
+            />
+          </View>
+
+          {/* ==================================================
+              PERSON
+          ================================================== */}
+
+          <View
+            style={
+              styles.inputContainer
+            }
+          >
+            <Ionicons
+              name="person-outline"
+              size={21}
+              color={
+                theme.textLight
+              }
+              style={
+                styles.inputIcon
+              }
+            />
+
+            <TextInput
+              style={
+                styles.input
+              }
+              placeholder="Person Name (Optional)"
+              placeholderTextColor={
+                theme.textLight
+              }
+              value={
+                person
+              }
+              onChangeText={
+                setPerson
+              }
+              editable={
+                !isLoading
+              }
+              maxLength={
+                100
+              }
+              autoCapitalize="words"
               returnKeyType="done"
             />
           </View>

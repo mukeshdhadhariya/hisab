@@ -17,15 +17,15 @@ export async function getTransactionsByUserId(req, res) {
 
 export async function createTransaction(req, res) {
   try {
-    const { title, amount, category, user_id } = req.body;
+    const { title, amount, category, user_id, person } = req.body;
 
     if (!title || !user_id || !category || amount === undefined) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     const transaction = await sql`
-      INSERT INTO transactions(user_id,title,amount,category)
-      VALUES (${user_id},${title},${amount},${category})
+      INSERT INTO transactions(user_id,title,amount,category,person)
+      VALUES (${user_id},${title},${amount},${category},${person || null})
       RETURNING *
     `;
     

@@ -15,6 +15,8 @@ import {
   ThemeProvider,
 } from "@/context/ThemeContext";
 
+import { TransactionsProvider } from "@/context/TransactionsContext";
+
 const clerkPublishableKey =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -97,7 +99,9 @@ export default function RootLayout() {
       tokenCache={tokenCache}
     >
       <ThemeProvider>
-        <AppContent />
+        <TransactionsProvider>
+          <AppContent />
+        </TransactionsProvider>
       </ThemeProvider>
     </ClerkProvider>
   );

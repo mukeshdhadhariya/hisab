@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
   RefreshControl,
   Text,
@@ -20,6 +21,7 @@ import {
 } from "react";
 
 import { Ionicons } from "@expo/vector-icons";
+import { PieChart } from "react-native-chart-kit";
 
 import { useTransactions } from "../../hooks/useTransactions";
 import { BalanceCard } from "../../components/BalanceCard";
@@ -72,6 +74,7 @@ export default function Page() {
     isLoading,
     error,
     loadData,
+    refresh,
     deleteTransaction,
   } = useTransactions(userId);
 
@@ -81,28 +84,18 @@ export default function Page() {
   //
   // IMPORTANT:
   // This prevents:
-  //
-  // theme change
-  // state update
-  // rerender
-  // React development behavior
-  //
-  // from triggering another initial API request.
+  // LOAD DATA ONCE
   // ==========================================================
 
   const loadedUserRef = useRef(null);
 
   useEffect(() => {
-    if (!isLoaded) {
+    // Basic checks.
+    if (!isLoaded || !userId) {
       return;
     }
 
-    if (!userId) {
-      loadedUserRef.current = null;
-      return;
-    }
-
-    // Already loaded this user's data.
+    // Prevent fetching again if already fetched for this user.
     if (loadedUserRef.current === userId) {
       return;
     }
@@ -146,7 +139,7 @@ export default function Page() {
     try {
       setRefreshing(true);
 
-      await loadData();
+      await refresh();
     } catch (error) {
       console.error(
         "[Home] Refresh failed:",
@@ -159,7 +152,7 @@ export default function Page() {
     userId,
     refreshing,
     isLoading,
-    loadData,
+    refresh,
   ]);
 
   // ==========================================================
@@ -353,11 +346,16 @@ export default function Page() {
 
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {avatarLetter}
-              </Text>
-            </View>
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              onPress={() => router.push("/stats")}
+            >
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {avatarLetter}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
             <View style={styles.welcomeContainer}>
               <Text

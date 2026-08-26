@@ -13,8 +13,12 @@ export async function initDB() {
       title  VARCHAR(255) NOT NULL,
       amount  DECIMAL(10,2) NOT NULL,
       category VARCHAR(255) NOT NULL,
+      person VARCHAR(255),
       created_at DATE NOT NULL DEFAULT CURRENT_DATE
     )`;
+
+    // Ensure person column exists if table was already created
+    await sql`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS person VARCHAR(255)`;
 
     console.log("Database initialized successfully");
   } catch (error) {
