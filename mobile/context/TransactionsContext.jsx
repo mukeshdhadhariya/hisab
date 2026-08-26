@@ -36,10 +36,6 @@ const getTxKey = (uid) => `@transactions_${uid}`;
 const getSummaryKey = (uid) => `@summary_${uid}`;
 const getQueueKey = (uid) => `@sync_queue_${uid}`;
 
-let hasConfirmedDelete = false;
-export const getHasConfirmedDelete = () => hasConfirmedDelete;
-export const setHasConfirmedDelete = (val) => { hasConfirmedDelete = val; };
-
 export const TransactionsProvider = ({ children }) => {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -298,15 +294,15 @@ export const TransactionsProvider = ({ children }) => {
     return true;
   }, [userId, transactions, processSyncQueue]);
 
-  // Optimistic Toggle Paid
-  const toggleTransactionPaidStatus = useCallback(async (id) => {
+  // Optimistic Mark as Paid
+  const markTransactionAsPaid = useCallback(async (id) => {
     if (!id || !userId) return false;
 
     // Update state instantly
     setTransactions(prev => {
       const updated = prev.map(t => {
         if (String(t.id) === String(id) || String(t._id) === String(id)) {
-          return { ...t, is_paid: !t.is_paid };
+          return { ...t, is_paid: true };
         }
         return t;
       });
@@ -316,14 +312,14 @@ export const TransactionsProvider = ({ children }) => {
 
     // Add to sync queue
     const tx = transactions.find(t => String(t.id) === String(id) || String(t._id) === String(id));
-    if (!tx) return;
+    if (!tx || tx.is_paid) return;
 
     const queueStr = await safeAsyncStorage.getItem(getQueueKey(userId));
     const queue = queueStr ? JSON.parse(queueStr) : [];
     queue.push({ 
       id: Date.now().toString(), 
       action: "UPDATE_STATUS", 
-      payload: { id, is_paid: !tx.is_paid }, 
+      payload: { id, is_paid: true }, 
       tempId: id 
     });
     await safeAsyncStorage.setItem(getQueueKey(userId), JSON.stringify(queue));
@@ -348,7 +344,7 @@ export const TransactionsProvider = ({ children }) => {
       refresh,
       createTransaction,
       deleteTransaction,
-      toggleTransactionPaidStatus,
+      markTransactionAsPaid,
     }}>
       {children}
     </TransactionsContext.Provider>

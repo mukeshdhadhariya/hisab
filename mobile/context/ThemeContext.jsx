@@ -17,11 +17,11 @@ export const ThemeProvider = ({
   children,
 }) => {
   const [themeName, setThemeName] =
-    useState("coffee");
+    useState("light");
 
   const theme =
     THEMES[themeName] ??
-    THEMES.coffee;
+    THEMES.light;
 
   const cycleTheme = () => {
     setThemeName((current) => {

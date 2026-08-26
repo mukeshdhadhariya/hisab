@@ -154,7 +154,37 @@ const oceanTheme = createTheme({
 });
 
 // ==========================================================
-// DARK (MIDNIGHT)
+// LIGHT — CLASSIC
+// ==========================================================
+
+const lightTheme = createTheme({
+  name: "Light",
+  icon: "☀️",
+
+  // Brand / Actions
+  primary: "#4F46E5",
+
+  // App surfaces
+  background: "#F7F7F8",
+  surface: "#FFFFFF",
+  surfaceElevated: "#FFFFFF",
+
+  // Typography
+  text: "#18181B",
+  textSecondary: "#52525B",
+  textMuted: "#8A8A93",
+
+  // Borders / dividers
+  border: "#E4E4E7",
+
+  // Financial semantics
+  expense: "#DC2626",
+  income: "#15803D",
+});
+
+
+// ==========================================================
+// DARK — MIDNIGHT
 // ==========================================================
 
 const darkTheme = createTheme({
@@ -162,17 +192,23 @@ const darkTheme = createTheme({
   icon: "🌙",
   isDark: true,
 
+  // Brand / Actions
   primary: "#818CF8",
-  background: "#121214",
-  surface: "#1A1A1E",
-  surfaceElevated: "#24242A",
 
-  text: "#F3F4F6",
-  textSecondary: "#9CA3AF",
-  textMuted: "#6B7280",
+  // App surfaces
+  background: "#0D0E12",
+  surface: "#15171D",
+  surfaceElevated: "#1D2028",
 
-  border: "#2E2E35",
+  // Typography
+  text: "#F4F4F5",
+  textSecondary: "#A1A1AA",
+  textMuted: "#71717A",
 
+  // Borders / dividers
+  border: "#2A2D35",
+
+  // Financial semantics
   expense: "#F87171",
   income: "#4ADE80",
 });
@@ -182,13 +218,14 @@ const darkTheme = createTheme({
 // ==========================================================
 
 export const THEMES = {
-  coffee: coffeeTheme,
-  forest: forestTheme,
-  purple: purpleTheme,
-  ocean: oceanTheme,
+  // coffee: coffeeTheme,
+  // forest: forestTheme,
+  // purple: purpleTheme,
+  // ocean: oceanTheme,
+  light: lightTheme,
   dark: darkTheme,
 };
 
 export const THEME_KEYS = Object.keys(THEMES);
 
-export const COLORS = THEMES.coffee;
+export const COLORS = THEMES.light;

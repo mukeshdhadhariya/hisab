@@ -17,7 +17,7 @@ const CATEGORY_ICONS = {
   Rent: "home-outline",
 };
 
-export const TransactionItem = React.memo(({ item, onDelete, onTogglePaid }) => {
+export const TransactionItem = React.memo(({ item, onDelete, onMarkPaid }) => {
   const { theme } = useTheme();
 
   // Memoize styles to prevent unnecessary object recalculations on scroll
@@ -103,7 +103,7 @@ export const TransactionItem = React.memo(({ item, onDelete, onTogglePaid }) => 
         {item?.is_paid === false && (
           <TouchableOpacity
             style={[styles.deleteButton, { marginRight: 8, backgroundColor: theme.incomeLight || "rgba(34, 197, 94, 0.12)" }]}
-            onPress={() => onTogglePaid?.(transactionId)}
+            onPress={() => onMarkPaid?.(transactionId)}
             activeOpacity={0.6}
             accessibilityRole="button"
             accessibilityLabel={`Mark ${title} as paid`}

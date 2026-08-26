@@ -24,9 +24,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { PieChart } from "react-native-chart-kit";
 
 import { useTransactions } from "../../hooks/useTransactions";
-import { getHasConfirmedDelete, setHasConfirmedDelete } from "../../context/TransactionsContext";
 import { BalanceCard } from "../../components/BalanceCard";
 import { TransactionItem } from "../../components/TransactionItem";
+import { DeleteModal } from "../../components/DeleteModal";
 import NoTransactionsFound from "../../components/NoTransactionsFound";
 
 import { useTheme } from "../../context/ThemeContext";
@@ -58,6 +58,9 @@ export default function Page() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   // ==========================================================
   // USER
@@ -77,7 +80,7 @@ export default function Page() {
     loadData,
     refresh,
     deleteTransaction,
-    toggleTransactionPaidStatus,
+    markTransactionAsPaid,
   } = useTransactions(userId);
 
   // ==========================================================
@@ -201,99 +204,11 @@ export default function Page() {
   // DELETE
   // ==========================================================
 
-  const handleDelete = useCallback(
-    (id) => {
-      if (!id) {
-        return;
-      }
-      
-      if (getHasConfirmedDelete()) {
-        deleteTransaction(id);
-        return;
-      }
-
-      Alert.alert(
-        "Delete transaction",
-        "Are you sure you want to delete this transaction?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Delete", 
-            style: "destructive", 
-            onPress: () => {
-               setHasConfirmedDelete(true);
-               deleteTransaction(id);
-            }
-          }
-        ]
-      );
-    },
-    [deleteTransaction]
-  );
-
-  // ==========================================================
-  // CLERK LOADING
-  // ==========================================================
-
-  if (!isLoaded) {
-    return (
-      <View style={styles.loadingScreen}>
-        <View style={styles.loadingCard}>
-          <ActivityIndicator
-            size="large"
-            color={theme.primary}
-          />
-
-          <Text style={styles.loadingTitle}>
-            Loading your account
-          </Text>
-
-          <Text style={styles.loadingText}>
-            Just a moment...
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  // ==========================================================
-  // NO USER
-  // ==========================================================
-
-  if (!userId) {
-    return (
-      <View style={styles.loadingScreen}>
-        <View style={styles.authCard}>
-          <View style={styles.authIcon}>
-            <Ionicons
-              name="person-outline"
-              size={28}
-              color={theme.primary}
-            />
-          </View>
-
-          <Text style={styles.authTitle}>
-            Sign in required
-          </Text>
-
-          <Text style={styles.authMessage}>
-            Please sign in to continue managing
-            your transactions.
-          </Text>
-
-          <TouchableOpacity
-            style={styles.primaryAction}
-            onPress={() => router.push("/sign-in")}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.primaryActionText}>
-              Sign in
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  const handleDelete = useCallback((id) => {
+    if (!id) return;
+    setDeletingId(id);
+    setDeleteModalVisible(true);
+  }, []);
 
   // ==========================================================
   // USER INFO
@@ -555,6 +470,64 @@ export default function Page() {
   // LIST
   // ==========================================================
 
+  // CLERK LOADING
+  if (!isLoaded) {
+    return (
+      <View style={styles.loadingScreen}>
+        <View style={styles.loadingCard}>
+          <ActivityIndicator
+            size="large"
+            color={theme.primary}
+          />
+
+          <Text style={styles.loadingTitle}>
+            Loading your account
+          </Text>
+
+          <Text style={styles.loadingText}>
+            Just a moment...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // NO USER
+  if (!userId) {
+    return (
+      <View style={styles.loadingScreen}>
+        <View style={styles.authCard}>
+          <View style={styles.authIcon}>
+            <Ionicons
+              name="person-outline"
+              size={28}
+              color={theme.primary}
+            />
+          </View>
+
+          <Text style={styles.authTitle}>
+            Sign in required
+          </Text>
+
+          <Text style={styles.authMessage}>
+            Please sign in to continue managing
+            your transactions.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.primaryAction}
+            onPress={() => router.push("/sign-in")}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryActionText}>
+              Sign in
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.screen}>
       <FlatList
@@ -572,7 +545,7 @@ export default function Page() {
           <TransactionItem
             item={item}
             onDelete={handleDelete}
-            onTogglePaid={toggleTransactionPaidStatus}
+            onMarkPaid={markTransactionAsPaid}
           />
         )}
         ListHeaderComponent={
@@ -613,6 +586,17 @@ export default function Page() {
         style={styles.transactionsList}
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews={false}
+      />
+
+      <DeleteModal 
+        visible={deleteModalVisible}
+        onClose={() => setDeleteModalVisible(false)}
+        onConfirm={() => {
+          if (deletingId) {
+            deleteTransaction(deletingId);
+            setDeletingId(null);
+          }
+        }}
       />
     </View>
   );

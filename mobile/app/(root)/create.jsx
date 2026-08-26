@@ -24,6 +24,9 @@ import { createCreateStyles } from "../../assets/styles/create.styles";
 import { useTheme } from "../../context/ThemeContext";
 
 
+import { useTransactions } from "../../hooks/useTransactions";
+
+
 // ============================================================
 // CATEGORIES
 // ============================================================
@@ -91,9 +94,6 @@ const parseApiResponse = async (response) => {
     };
   }
 };
-
-
-import { useTransactions } from "../../hooks/useTransactions";
 
 // ============================================================
 // SCREEN
@@ -348,9 +348,10 @@ const CreateScreen = () => {
       user,
       title,
       amount,
+      person,
       selectedCategory,
       isExpense,
-      person,
+      isPaid,
       createTransaction,
       router,
     ]);
@@ -832,25 +833,48 @@ const CreateScreen = () => {
               PAID STATUS
           ================================================== */}
 
-          <View style={[styles.inputContainer, { justifyContent: 'space-between', borderBottomWidth: 0, paddingRight: 10 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={21}
-                color={theme.textLight}
-                style={styles.inputIcon}
-              />
-              <Text style={[styles.input, { color: theme.text }]}>
-                {isPaid ? "Paid / Settled" : "Unpaid / Pending"}
-              </Text>
-            </View>
-            <Switch
-              value={isPaid}
-              onValueChange={setIsPaid}
+          <View style={[styles.typeSelector, { marginBottom: 15 }]}>
+            <TouchableOpacity
+              style={[
+                styles.typeButton,
+                isPaid && styles.typeButtonActive,
+                { flex: 1 }
+              ]}
+              onPress={() => setIsPaid(true)}
               disabled={isLoading}
-              trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={Platform.OS === 'ios' ? '#fff' : (isPaid ? theme.primary : '#f4f3f4')}
-            />
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color={isPaid ? theme.textOnPrimary : theme.income}
+                style={styles.typeIcon}
+              />
+              <Text style={[styles.typeButtonText, isPaid && styles.typeButtonTextActive]}>
+                Paid
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.typeButton,
+                !isPaid && { backgroundColor: theme.expense },
+                { flex: 1 }
+              ]}
+              onPress={() => setIsPaid(false)}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="time"
+                size={18}
+                color={!isPaid ? theme.textOnPrimary : theme.textSecondary}
+                style={styles.typeIcon}
+              />
+              <Text style={[styles.typeButtonText, !isPaid && styles.typeButtonTextActive]}>
+                Unpaid
+              </Text>
+            </TouchableOpacity>
           </View>
 
 

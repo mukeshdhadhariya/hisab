@@ -25,14 +25,14 @@ export default function StatsScreen() {
   const styles = useMemo(() => createHomeStyles(theme), [theme]);
   const [activeTab, setActiveTab] = useState("category"); // 'category' | 'person'
 
-  const { transactions, isLoading, loadData } = useTransactions(user?.id);
+  const { transactions, isLoading, loadData, hasLoaded } = useTransactions(user?.id);
 
   useFocusEffect(
     React.useCallback(() => {
-      if (isLoaded && user?.id) {
+      if (isLoaded && user?.id && !hasLoaded) {
         loadData();
       }
-    }, [isLoaded, user?.id, loadData])
+    }, [isLoaded, user?.id, loadData, hasLoaded])
   );
 
   const safeTransactions = Array.isArray(transactions) ? transactions : [];
@@ -42,7 +42,7 @@ export default function StatsScreen() {
     safeTransactions.forEach((t) => {
       if (t.person) {
         if (!stats[t.person]) stats[t.person] = 0;
-        stats[t.person] += Number(t.amount);
+        stats[t.person] += Math.abs(Number(t.amount));
       }
     });
 
@@ -52,8 +52,8 @@ export default function StatsScreen() {
     ];
 
     const data = Object.entries(stats).map(([name, amount], index) => ({
-      name: `${name} ${amount > 0 ? '(Owes You)' : '(You Owe)'}`,
-      population: Math.abs(amount),
+      name,
+      population: amount,
       color: colors[index % colors.length],
       legendFontColor: theme.text,
       legendFontSize: 12,
