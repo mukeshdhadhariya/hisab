@@ -1,29 +1,91 @@
-# 💰 Expense Tracker Daily
+# 💰 Hisab - Expense & Settlement Tracker
 
-A simple and powerful **mobile app** to track your daily expenses.  
-Built with **React Native** for the frontend and **Node.js + Express** for the backend.  
+A robust, offline-first mobile application built to track personal expenses and manage peer-to-peer settlements. Designed with a clean, themeable UI and engineered for performance, **Hisab** ensures your financial data is always accessible, even without an internet connection.
 
 ---
 
 ## 🚀 Features
-- 📊 Add, edit, and delete expenses
-- 🗓️ Track daily, weekly, and monthly spending
-- 🔎 Categorize expenses (Food, Travel, Bills, etc.)
-- 💾 Data stored securely in backend (Node.js + Database)
-- 📱 Clean and user-friendly UI with React Native
+
+- **⚡ Offline-First Architecture:** Add, edit, and delete transactions locally. The app automatically queues your changes and syncs them to the cloud in the background once you're back online.
+- **🤝 Peer-to-Peer Settlements:** Track exactly who owes you and who you owe. Easily mark debts as "Paid" and instantly see your net pending settlements.
+- **📊 Interactive Analytics:** Visualize your spending habits with dynamic pie charts broken down by category and by person.
+- **🎨 Dynamic Theming:** Choose from 6 beautifully crafted professional themes (Light, Dark, Coffee, Ocean, Forest, Purple) that adapt the entire UI instantly.
+- **🔒 Enterprise-Grade Security:** Secure authentication powered by Clerk, supporting Google SSO and secure email verification.
 
 ---
 
 ## 🛠️ Tech Stack
-- **Frontend:** React Native, Expo, React Navigation  
-- **Backend:** Node.js, Express.js, MongoDB/MySQL (choose your DB)  
-- **Authentication:** JWT (JSON Web Tokens)  
-- **State Management:** Context API / Redux  
+
+**Frontend (Mobile App)**
+- **Framework:** React Native & Expo (SDK 53)
+- **Routing:** Expo Router (File-based navigation)
+- **State Management & Caching:** React Context API + AsyncStorage (Custom Sync Queue)
+- **UI Components:** Custom animated modals, React Native Chart Kit
+
+**Backend (API & Database)**
+- **Runtime:** Node.js & Express.js
+- **Database:** PostgreSQL (Hosted on Neon.tech)
+- **Authentication:** Clerk Auth (JWT verification & User Management)
+- **Architecture:** RESTful API with optimistic UI updates
 
 ---
 
-<img width="355" height="739" alt="image" src="https://github.com/user-attachments/assets/1f3c65b1-635d-4739-b432-9f4526b603b1" />
-<img width="356" height="738" alt="image" src="https://github.com/user-attachments/assets/e334d9bb-ed55-4b8c-9761-ab41c3bacc63" />
+## 📸 Screenshots
 
+<div style="display: flex; flex-direction: row; gap: 10px;">
+  <img width="355" height="739" alt="image" src="https://github.com/user-attachments/assets/1f3c65b1-635d-4739-b432-9f4526b603b1" />
+  <img width="356" height="738" alt="image" src="https://github.com/user-attachments/assets/e334d9bb-ed55-4b8c-9761-ab41c3bacc63" />
+</div>
 
+---
 
+## ⚙️ Local Development Setup
+
+### Prerequisites
+- Node.js (v18+)
+- PostgreSQL Database (Local or Cloud)
+- Clerk Account (For Auth Keys)
+- Expo CLI
+
+### 1. Backend Setup
+```bash
+cd backend
+npm install
+```
+Create a `.env` file in the `backend` directory:
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/hisab
+PORT=3000
+```
+Start the server:
+```bash
+npm start
+```
+
+### 2. Mobile App Setup
+```bash
+cd mobile
+npm install
+```
+Create a `.env` file in the `mobile` directory:
+```env
+EXPO_PUBLIC_API_URL=http://<YOUR_IP_ADDRESS>:3000/api
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+```
+Start the Expo development server:
+```bash
+npx expo start
+```
+
+---
+
+## 📦 Production Deployment
+
+For public release, the app is configured to be built via **Expo Application Services (EAS)** into an Android App Bundle (`.aab`).
+
+```bash
+cd mobile
+eas build --platform android --profile production
+```
+
+*Built with ❤️ using React Native & Node.js*
