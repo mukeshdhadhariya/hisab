@@ -32,12 +32,12 @@ A robust, offline-first mobile application built to track personal expenses and 
 
 ## 📸 Screenshots
 
-<p align="center">
-  <img width="18%" alt="Dashboard" src="assets/screenshots/dashboard.jpg" />
-  <img width="18%" alt="New Transaction" src="assets/screenshots/new_transaction.jpg" />
-  <img width="18%" alt="Statistics By Category" src="assets/screenshots/stats_by_category.jpg" />
-  <img width="18%" alt="Statistics By Person" src="assets/screenshots/stats_by_person.jpg" />
-  <img width="18%" alt="Person Transactions" src="assets/screenshots/person_transactions.jpg" />
+<p style="display: flex; flex-direction: row; gap: 10px;">
+  <img width="30%" alt="Dashboard" src="assets/screenshots/dashboard.jpg" />
+  <img width="30%" alt="New Transaction" src="assets/screenshots/new_transaction.jpg" />
+  <img width="30%" alt="Statistics By Category" src="assets/screenshots/stats_by_category.jpg" />
+  <img width="30%" alt="Statistics By Person" src="assets/screenshots/stats_by_person.jpg" />
+  <img width="30%" alt="Person Transactions" src="assets/screenshots/person_transactions.jpg" />
 </p>
 
 ---
