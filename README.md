@@ -6,15 +6,15 @@ A robust, offline-first mobile application built to track personal expenses and 
 
 ##  Features
 
-- **⚡ Offline-First Architecture:** Add, edit, and delete transactions locally. The app automatically queues your changes and syncs them to the cloud in the background once you're back online.
-- **🤝 Peer-to-Peer Settlements:** Track exactly who owes you and who you owe. Easily mark debts as "Paid" and instantly see your net pending settlements.
-- **📊 Interactive Analytics:** Visualize your spending habits with dynamic pie charts broken down by category and by person.
-- **🎨 Dynamic Theming:** Choose from 6 beautifully crafted professional themes (Light, Dark, Coffee, Ocean, Forest, Purple) that adapt the entire UI instantly.
-- **🔒 Enterprise-Grade Security:** Secure authentication powered by Clerk, supporting Google SSO and secure email verification.
+- ** Offline-First Architecture:** Add, edit, and delete transactions locally. The app automatically queues your changes and syncs them to the cloud in the background once you're back online.
+- ** Peer-to-Peer Settlements:** Track exactly who owes you and who you owe. Easily mark debts as "Paid" and instantly see your net pending settlements.
+- ** Interactive Analytics:** Visualize your spending habits with dynamic pie charts broken down by category and by person.
+- ** Dynamic Theming:** Choose from 6 beautifully crafted professional themes (Light, Dark, Coffee, Ocean, Forest, Purple) that adapt the entire UI instantly.
+- ** Enterprise-Grade Security:** Secure authentication powered by Clerk, supporting Google SSO and secure email verification.
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 **Frontend (Mobile App)**
 - **Framework:** React Native & Expo (SDK 53)
