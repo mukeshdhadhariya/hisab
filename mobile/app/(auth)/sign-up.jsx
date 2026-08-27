@@ -13,6 +13,7 @@ import {
 import { useSignUp, useSSO } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 import AuthLogo from "@/components/AuthLogo";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
@@ -380,7 +381,7 @@ export default function SignUpScreen() {
         redirectUrl:
           Platform.OS === "web"
             ? window.location.origin
-            : undefined,
+            : Linking.createURL("/"),
       });
 
       if (createdSessionId) {

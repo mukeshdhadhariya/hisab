@@ -14,6 +14,7 @@ import {
 import { useSignIn, useSSO } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 
 import AuthLogo from "@/components/AuthLogo";
@@ -396,7 +397,7 @@ export default function SignInScreen() {
         redirectUrl:
           Platform.OS === "web"
             ? window.location.origin
-            : undefined,
+            : Linking.createURL("/"),
       });
 
       console.log(
