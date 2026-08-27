@@ -1,10 +1,10 @@
-# 💰 Hisab - Expense & Settlement Tracker
+#  Hisab - Expense & Settlement Tracker
 
 A robust, offline-first mobile application built to track personal expenses and manage peer-to-peer settlements. Designed with a clean, themeable UI and engineered for performance, **Hisab** ensures your financial data is always accessible, even without an internet connection.
 
 ---
 
-## 🚀 Features
+##  Features
 
 - **⚡ Offline-First Architecture:** Add, edit, and delete transactions locally. The app automatically queues your changes and syncs them to the cloud in the background once you're back online.
 - **🤝 Peer-to-Peer Settlements:** Track exactly who owes you and who you owe. Easily mark debts as "Paid" and instantly see your net pending settlements.
@@ -48,47 +48,6 @@ A robust, offline-first mobile application built to track personal expenses and 
 - Node.js (v18+)
 - PostgreSQL Database (Local or Cloud)
 - Clerk Account (For Auth Keys)
+  
 - Expo CLI
 
-### 1. Backend Setup
-```bash
-cd backend
-npm install
-```
-Create a `.env` file in the `backend` directory:
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/hisab
-PORT=3000
-```
-Start the server:
-```bash
-npm start
-```
-
-### 2. Mobile App Setup
-```bash
-cd mobile
-npm install
-```
-Create a `.env` file in the `mobile` directory:
-```env
-EXPO_PUBLIC_API_URL=http://<YOUR_IP_ADDRESS>:3000/api
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-```
-Start the Expo development server:
-```bash
-npx expo start
-```
-
----
-
-## 📦 Production Deployment
-
-For public release, the app is configured to be built via **Expo Application Services (EAS)** into an Android App Bundle (`.aab`).
-
-```bash
-cd mobile
-eas build --platform android --profile production
-```
-
-*Built with ❤️ using React Native & Node.js*
